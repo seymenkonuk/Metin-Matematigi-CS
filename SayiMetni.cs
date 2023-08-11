@@ -5,12 +5,13 @@ namespace Metin_Matematigi_CS
     public struct SayiMetni
     {
 
-        // Değişkenler
+        #region Değişkenler
         private bool _Isaret = true;
         private List<char> _TamKisim = new List<char>();
         private List<char> _OndalikliKisim = new List<char>();
+        #endregion
 
-        // Özellikler
+        #region Özellikler
         public bool Isaret
         {
             get
@@ -73,8 +74,19 @@ namespace Metin_Matematigi_CS
 
             }
         }
+        public int this[int i]
+        {
+            get
+            {
+                if (i < 0)
+                    return OndalikliKisim[-i-1] - '0';
+                else
+                    return TamKisim[i-1] - '0';
+            }
+        }
+        #endregion
 
-        // Yapıcı Metotlar
+        #region Yapıcı Metotlar
         public SayiMetni()
         {
             TamKisim = "0";
@@ -114,8 +126,9 @@ namespace Metin_Matematigi_CS
                 OndalikliKisim = "0";
             }
         }
+        #endregion
 
-        // Geçersiz Kılınan Metotlar
+        #region Geçersiz Kılınan Metotlar
         public override string ToString()
         {
             bool ondalikGoster = false;
@@ -140,8 +153,9 @@ namespace Metin_Matematigi_CS
         {
             return base.Equals(obj);
         }
+        #endregion
 
-        // Aritmetiksel Metotlar
+        #region Aritmetiksel Metotlar
         private static SayiMetni Topla(SayiMetni s1, SayiMetni s2)
         {
             // Pozitif + Negatif -> Pozitif - Pozitif
@@ -474,8 +488,9 @@ namespace Metin_Matematigi_CS
         {
             return Karekok(new SayiMetni(sayi));
         }
+        #endregion
 
-        // Aritmetiksel Operatörler
+        #region Aritmetiksel Operatörler
         public static SayiMetni operator +(SayiMetni s1, SayiMetni s2)
         {
             return Topla(s1, s2);
@@ -532,8 +547,9 @@ namespace Metin_Matematigi_CS
         {
             return s1 - "1";
         }
+        #endregion
 
-        // Karşılaştırma Metotları
+        #region Karşılaştırma Metotları
         private static bool Karsilastir(SayiMetni s1, SayiMetni s2, bool EsitMi) //Büyükse "true" döndürür. Eşitse "EsitMi" döndürür
         {
             if (s1.Isaret && !s2.Isaret) return true; // Pozitif Negatiften Her Zaman Büyüktür
@@ -603,8 +619,9 @@ namespace Metin_Matematigi_CS
         {
             return !EsitMi(s1, s2);
         }
+        #endregion
 
-        // Karşılaştırma Operatörleri
+        #region Karşılaştırma Operatörleri
         public static bool operator ==(SayiMetni s1, SayiMetni s2)
         {
             return EsitMi(s1, s2);
@@ -677,8 +694,23 @@ namespace Metin_Matematigi_CS
         {
             return KucukMu(new SayiMetni(s1), s2);
         }
+        #endregion
 
-        // Diğer Metotlar
+        #region Örtük Dönüştürme Operatörleri
+        public static implicit operator SayiMetni(string sayi)
+        {
+            return new SayiMetni(sayi);
+        }
+        #endregion
+
+        #region Açık Dönüştürme Operatörleri
+        public static explicit operator string(SayiMetni sayiMetni)
+        {
+            return sayiMetni.ToString();
+        }
+        #endregion
+
+        #region Diğer Metotlar
         public static bool TamSayiMi(string metin)
         {
             for (int i = 0; i < metin.Length; i++)
@@ -726,6 +758,7 @@ namespace Metin_Matematigi_CS
         {
             return RastgeleAralik(new SayiMetni(min), new SayiMetni(maks));
         }
+        #endregion
 
     }
 }
