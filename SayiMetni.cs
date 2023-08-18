@@ -6,28 +6,24 @@ namespace Metin_Matematigi_CS
     {
 
         #region Değişkenler
-        private bool _Isaret = true;
-        private List<char> _TamKisim = new List<char>();
-        private List<char> _OndalikliKisim = new List<char>();
+        private readonly List<uint> _TamKisim = new ();
+        private readonly List<uint> _OndalikliKisim = new ();
         #endregion
 
         #region Özellikler
-        public bool Isaret
-        {
-            get
-            {
-                return _Isaret;
-            }
-            set
-            {
-                _Isaret = value;
-            }
-        }
+        public bool Isaret { get; set; }
         public string TamKisim
         {
             get
             {
-                return new string(_TamKisim.ToArray());
+                string sonuc = _TamKisim[0].ToString();
+                for (int i = 1; i < _TamKisim.Count; i++)
+                {
+                    string deger = _TamKisim[i].ToString();
+                    deger = new string('0', 8 - deger.Length) + deger;
+                    sonuc += deger;
+                }
+                return sonuc;
             }
             set
             {
@@ -35,24 +31,41 @@ namespace Metin_Matematigi_CS
                 // Girilen Değer Sayı Değilse 0 Yaz
                 if (TamSayiMi(value))
                 {
-                    int i;
-                    // Varsa Baştaki Gereksiz Sıfırları Alma
-                    for (i = 0; i < value.Length - 1; i++)
-                        if (value[i] != '0')
-                            break;
+                    int bitisPos = value.Length;
+                    while (bitisPos > 0)
+                    {
+                        int basPos = bitisPos - 8;
+                        if (basPos < 0) basPos = 0;
 
-                    for (; i < value.Length; i++)
-                        _TamKisim.Add(value[i]);
+                        _TamKisim.Insert(0, Convert.ToUInt32(value[basPos..bitisPos]));
+
+                        bitisPos -= 8;
+                    }
                 }
                 else
-                    _TamKisim.Add('0');
+                    _TamKisim.Add(0);
+
+                // Baştaki Gereksiz Sıfırları sil
+                while (_TamKisim.Count > 1 && _TamKisim[0] == 0) _TamKisim.RemoveAt(0);
+                
             }
         }
         public string OndalikliKisim
         {
             get
             {
-                return new string(_OndalikliKisim.ToArray());
+                string sonuc = "";
+                foreach (uint sayi in _OndalikliKisim)
+                {
+                    string deger = sayi.ToString();
+                    deger = new string('0', 8 - deger.Length) + deger;
+                    sonuc += deger;
+
+                }
+                int i;
+                for (i = 1; i < sonuc.Length && sonuc[^i] == '0'; i++);
+
+                return sonuc[..^(i-1)];
             }
             set
             {
@@ -60,47 +73,77 @@ namespace Metin_Matematigi_CS
                 // Girilen Değer Sayı Değilse 0 Yaz
                 if (TamSayiMi(value))
                 {
-                    int i;
-                    // Varsa Sondaki Sıfırları Alma
-                    for (i = value.Length - 1; i >= 1; i--)
-                        if (value[i] != '0')
-                            break;
+                    int basPos = 0;
+                    while (basPos < value.Length)
+                    {
+                        int bitisPos = basPos + 8;
+                        if (bitisPos > value.Length) bitisPos = value.Length;
 
-                    for (; i >= 0; i--)
-                        _OndalikliKisim.Insert(0, value[i]);
+                        string deger = value[basPos..bitisPos];
+                        deger += new string('0', 8 - deger.Length);
+
+                        _OndalikliKisim.Add(Convert.ToUInt32(deger));
+
+                        basPos += 8;
+                    }
                 }
                 else
-                    _OndalikliKisim.Add('0');
+                    _OndalikliKisim.Add(0);
 
+                // Sondaki Gereksiz Sıfırları sil
+                while (_OndalikliKisim.Count > 1 && _OndalikliKisim[^1] == 0)
+                    _OndalikliKisim.RemoveAt(_OndalikliKisim.Count-1);
             }
         }
         public int this[int i]
         {
             get
             {
+                if (i == 0) throw new Exception("0 Indisi Bulunmamakta");
+
+                // Ondalıklı Sayılar
                 if (i < 0)
-                    return OndalikliKisim[-i-1] - '0';
+                {
+                    i = -i;
+                    int listIndex = (i - 1) / 8;
+                    int stringIndex = (i - 1) % 8;
+                    if (listIndex < _OndalikliKisim.Count)
+                    {
+                        string sayi = _OndalikliKisim[listIndex].ToString();
+                        sayi = new string('0', 8-sayi.Length) + sayi;
+                        if (stringIndex < sayi.Length)
+                            return sayi[stringIndex] - '0';
+                    }
+                    return 0;
+                }
+                // Tam Kısım
                 else
-                    return TamKisim[i-1] - '0';
+                {
+                    int listIndex = (i - 1) / 8;
+                    int stringIndex = (i - 1) % 8;
+                    if (listIndex < _TamKisim.Count)
+                    {
+                        string sayi = _TamKisim[^(listIndex+1)].ToString();
+                        if (stringIndex < sayi.Length)
+                            return sayi[^(stringIndex+1)] - '0';
+                    }
+                    return 0;
+                }
             }
         }
         #endregion
 
         #region Yapıcı Metotlar
-        private SayiMetni()
+        private SayiMetni(bool isaret = true, string tam = "0", string ondalikli = "0")
         {
-            TamKisim = "0";
-            OndalikliKisim = "0";
-        }
-        private SayiMetni(bool Isaret = true, string TamKisim = "0", string OndalikliKisim = "0")
-        {
-            this.Isaret = Isaret;
-            this.TamKisim = TamKisim;
-            this.OndalikliKisim = OndalikliKisim;
+            Isaret = isaret;
+            TamKisim = tam;
+            OndalikliKisim = ondalikli;
         }
         private SayiMetni(string sayi)
         {
             int i = 0;
+            Isaret = true;
 
             if (sayi[0] == '+' || sayi[0] == '-')
             {
@@ -108,7 +151,7 @@ namespace Metin_Matematigi_CS
                 Isaret = (sayi[0] == '+');
             }
 
-            string[] sonuc = sayi.Substring(i).Split('.');
+            string[] sonuc = sayi[i..].Split('.');
 
             if (sonuc.Length == 2)
             {
@@ -131,10 +174,7 @@ namespace Metin_Matematigi_CS
         #region Geçersiz Kılınan Metotlar
         public override string ToString()
         {
-            bool ondalikGoster = false;
-            if (OndalikliKisim.Length > 0)
-                if (!(OndalikliKisim.Length == 1 && OndalikliKisim[0] == '0'))
-                    ondalikGoster = true;
+            bool ondalikGoster = OndalikliKisim != "0";
 
             if (!Isaret && ondalikGoster)
                 return "-" + TamKisim + "." + OndalikliKisim;
@@ -142,296 +182,280 @@ namespace Metin_Matematigi_CS
                 return "-" + TamKisim;
             else if (Isaret && ondalikGoster)
                 return TamKisim + "." + OndalikliKisim;
-            else // if (Isaret && !ondalikGoster)
+            else //if (Isaret && !ondalikGoster)
                 return TamKisim;
         }
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
-        public override bool Equals([NotNullWhen(true)] object? obj)
-        {
-            return base.Equals(obj);
-        }
+        public override int GetHashCode() => base.GetHashCode();
+        public override bool Equals([NotNullWhen(true)] object? obj) =>base.Equals(obj);
         #endregion
 
         #region Aritmetiksel Metotlar
-        private static SayiMetni Topla(SayiMetni s1, SayiMetni s2)
+        public static SayiMetni Topla(SayiMetni sayi1, SayiMetni sayi2)
         {
             // Pozitif + Negatif -> Pozitif - Pozitif
-            if (s1.Isaret && !s2.Isaret)
-            {
-                s2.Isaret = true;
-                return s1 - s2;
-            }
+            if (sayi1.Isaret && !sayi2.Isaret)
+                return sayi1 - (-sayi2);
 
             // Negatif + Pozitif -> Pozitif - Pozitif
-            if (!s1.Isaret && s2.Isaret)
+            if (!sayi1.Isaret && sayi2.Isaret)
+                return sayi2 - (-sayi1);
+
+            // Aynı İşarete Sahiplerse
+
+            int maxTam = Math.Max(sayi1._TamKisim.Count, sayi2._TamKisim.Count) + 1;
+            int maxOnd = Math.Max(sayi1._OndalikliKisim.Count, sayi2._OndalikliKisim.Count);
+
+            uint[] sayi = new uint[maxTam + maxOnd];
+
+            for (int i = -maxOnd; i < maxTam; i++)
             {
-                s1.Isaret = true;
-                return s2 - s1;
+                ulong basamak = 0;
+
+                // İndis Numarasını Bul
+                int indis = (i < 0) ? -i - 1 : i + 1;
+                // Sayı1'in Basamağını Ekle
+                if (i < 0 && indis < sayi1._OndalikliKisim.Count) basamak += sayi1._OndalikliKisim[indis];
+                if (i >= 0 && indis <= sayi1._TamKisim.Count) basamak += sayi1._TamKisim[^indis];
+                // Sayı2'nin Basamağını Ekle
+                if (i < 0 && indis < sayi2._OndalikliKisim.Count) basamak += sayi2._OndalikliKisim[indis];
+                if (i >= 0 && indis <= sayi2._TamKisim.Count) basamak += sayi2._TamKisim[^indis];
+                // Sayıya Ekle
+                for (int j = 0; basamak > 0; j++)
+                {
+                    basamak += sayi[^(i + j + maxOnd + 1)]; // İki Basamak Toplamı + O an Orada Yazan Değer
+                    sayi[^(i + j + maxOnd + 1)] = (uint)(basamak % 100000000);
+                    basamak /= 100000000;
+                }
             }
 
-            // Aynı İşarete Sahipler
+            string sonuc = sayi1.Isaret ? "+" : "-";
+            for (int i = 0; i < maxTam; i++)
+                sonuc += new string('0', 8 - sayi[i].ToString().Length) + sayi[i].ToString();
+            sonuc += ".";
+            for (int i = maxTam; i < sayi.Length; i++)
+                sonuc += new string('0', 8 - sayi[i].ToString().Length) + sayi[i].ToString();
 
-            List<char> ondalikli = new List<char>();
-            int ondalikUzunluk = Math.Max(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
-
-            // Ondalıklı Kısımları Topla
-            int elde = 0;
-            for (int i = ondalikUzunluk - 1; i >= 0; i--)
-            {
-                int rakam1 = 0;
-                int rakam2 = 0;
-                if (s1.OndalikliKisim.Length > i) rakam1 = s1.OndalikliKisim[i] - '0';
-                if (s2.OndalikliKisim.Length > i) rakam2 = s2.OndalikliKisim[i] - '0';
-                int rakamSonuc = rakam1 + rakam2 + elde;
-                elde = rakamSonuc / 10;
-                rakamSonuc = rakamSonuc % 10;
-                ondalikli.Insert(0, (char)(rakamSonuc + '0'));
-            }
-
-            List<char> tam = new List<char>();
-            int tamUzunluk = Math.Max(s1.TamKisim.Length, s2.TamKisim.Length);
-
-            // Tam Kısımları Topla
-            for (int i = 0; i < tamUzunluk; i++)
-            {
-                int rakam1 = 0;
-                int rakam2 = 0;
-                if (s1.TamKisim.Length - 1 - i >= 0) rakam1 = s1.TamKisim[s1.TamKisim.Length - 1 - i] - '0';
-                if (s2.TamKisim.Length - 1 - i >= 0) rakam2 = s2.TamKisim[s2.TamKisim.Length - 1 - i] - '0';
-                int rakamSonuc = rakam1 + rakam2 + elde;
-                elde = rakamSonuc / 10;
-                rakamSonuc = rakamSonuc % 10;
-                tam.Insert(0, (char)(rakamSonuc + '0'));
-            }
-            while (elde > 0)
-            {
-                tam.Insert(0, (char)((elde % 10) + '0'));
-                elde /= 10;
-            }
-
-            return new SayiMetni(s1.Isaret, new string(tam.ToArray()), new string(ondalikli.ToArray()));
+            return sonuc;
         }
-        private static SayiMetni Cikart(SayiMetni s1, SayiMetni s2)
+        private static SayiMetni Cikart(SayiMetni sayi1, SayiMetni sayi2)
         {
             // İkinci Sayı Negatifse Toplama İşlemidir
-            if (!s2.Isaret)
-            {
-                s2.Isaret = true;
-                return s1 + s2;
-            }
+            if (!sayi2.Isaret)
+                return sayi1 + (-sayi2);
 
             // Negatif - Pozitif -> Negatif + Negatif
-            if (!s1.Isaret)
+            if (!sayi1.Isaret)
+                return sayi1 + (-sayi2);
+
+            // Pozitif - Pozitif: Büyükten Küçüğü Çıkart Sonucu Negatif Yap
+            if (sayi1 < sayi2)
+                return -(sayi2 - sayi1);
+
+            // s1 >= s2 ve Pozitif - Pozitif
+
+            int maxTam = Math.Max(sayi1._TamKisim.Count, sayi2._TamKisim.Count);
+            int maxOnd = Math.Max(sayi1._OndalikliKisim.Count, sayi2._OndalikliKisim.Count);
+
+            uint[] sayi = new uint[maxTam + maxOnd];
+
+            long basamak = 0;
+            for (int i = -maxOnd; i < maxTam; i++)
             {
-                s2.Isaret = false;
-                return s1 + s2;
+                // İndis Numarasını Bul
+                int indis = (i < 0) ? -i - 1 : i + 1;
+                // Sayı1'in Basamağını Ekle
+                if (i < 0 && indis < sayi1._OndalikliKisim.Count) basamak += sayi1._OndalikliKisim[indis];
+                if (i >= 0 && indis <= sayi1._TamKisim.Count) basamak += sayi1._TamKisim[^indis];
+                // Sayı2'nin Basamağını Ekle
+                if (i < 0 && indis < sayi2._OndalikliKisim.Count) basamak -= sayi2._OndalikliKisim[indis];
+                if (i >= 0 && indis <= sayi2._TamKisim.Count) basamak -= sayi2._TamKisim[^indis];
+                // Sayıya Ekle
+                basamak += sayi[^(i + maxOnd + 1)]; // İki Basamak Toplamı + O an Orada Yazan Değer
+                int komsu;
+                for (komsu = 0; basamak < 0; komsu++)
+                    basamak += 100000000;
+                sayi[^(i + maxOnd + 1)] = (uint)basamak;
+                basamak = -komsu;
             }
 
-            // Pozitif - Pozitif
-            if (s1 < s2)
-            {
-                SayiMetni sonuc = s2 - s1; // Büyükten Küçüğü Çıkart
-                sonuc.Isaret = false; // Sonucu Negatif Yap
-                return sonuc;
-            }
+            string sonuc = sayi1.Isaret ? "+" : "-";
+            for (int i = 0; i < maxTam; i++)
+                sonuc += new string('0', 8 - sayi[i].ToString().Length) + sayi[i].ToString();
+            sonuc += ".";
+            for (int i = maxTam; i < sayi.Length; i++)
+                sonuc += new string('0', 8 - sayi[i].ToString().Length) + sayi[i].ToString();
 
-            // s1 >= s2
-
-            // Ondalıklı Kısmı Çıkart
-            List<char> ondalikli = new List<char>();
-            int ondalikUzunluk = Math.Max(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
-            int elde = 0;
-            for (int i = ondalikUzunluk - 1; i >= 0; i--)
-            {
-                int rakam1 = 0;
-                int rakam2 = 0;
-                if (s1.OndalikliKisim.Length > i) rakam1 = s1.OndalikliKisim[i] - '0';
-                if (s2.OndalikliKisim.Length > i) rakam2 = s2.OndalikliKisim[i] - '0';
-                int rakamSonuc = (rakam1 - elde) - rakam2;
-                elde = 0;
-                if (rakamSonuc < 0)
-                {
-                    elde = (-rakamSonuc) / 10 + 1;
-                    rakamSonuc = 10 - (-rakamSonuc) % 10;
-                    if (rakamSonuc == 0) elde--;
-                }
-                ondalikli.Insert(0, (char)(rakamSonuc + '0'));
-            }
-
-            // Tam Kısmı Çıkart
-            List<char> tam = new List<char>();
-            int tamUzunluk = Math.Max(s1.TamKisim.Length, s2.TamKisim.Length);
-            for (int i = 0; i < tamUzunluk; i++)
-            {
-                int rakam1 = 0;
-                int rakam2 = 0;
-                if (s1.TamKisim.Length - 1 - i >= 0) rakam1 = s1.TamKisim[s1.TamKisim.Length - 1 - i] - '0';
-                if (s2.TamKisim.Length - 1 - i >= 0) rakam2 = s2.TamKisim[s2.TamKisim.Length - 1 - i] - '0';
-                int rakamSonuc = (rakam1 - elde) - rakam2;
-                elde = 0;
-                if (rakamSonuc < 0)
-                {
-                    elde = (-rakamSonuc) / 10 + 1;
-                    rakamSonuc = 10 - (-rakamSonuc) % 10;
-                    if (rakamSonuc == 0) elde--;
-                }
-                tam.Insert(0, (char)(rakamSonuc + '0'));
-            }
-
-            return new SayiMetni(true, new string(tam.ToArray()), new string(ondalikli.ToArray()));
+            return sonuc;
         }
-        private static SayiMetni Carp(SayiMetni s1, SayiMetni s2)
+        private static SayiMetni Carp(SayiMetni sayi1, SayiMetni sayi2)
         {
-            if (s1 == "0") return new SayiMetni("0");
-            if (s2 == "0") return new SayiMetni("0");
-            if (s1 == "1") return s2;
-            if (s2 == "1") return s1;
-            if (s1 == "-1") { s2.Isaret = !s2.Isaret; return s2; }
-            if (s2 == "-1") { s1.Isaret = !s1.Isaret; return s1; }
+            if (sayi1 == "0" || sayi2 == "0") return "0";
 
-            SayiMetni sayi1 = new SayiMetni(s1.TamKisim + s1.OndalikliKisim); // 15.78 -> 1578
-            SayiMetni sayi2 = new SayiMetni(s2.TamKisim + s2.OndalikliKisim); // 15.78 -> 1578
+            if (sayi1 == "1") return sayi2;
+            if (sayi2 == "1") return sayi1;
 
-            SayiMetni sonuc = new SayiMetni("0");
-            for (int i = 0; i < sayi2.TamKisim.Length; i++)
+            if (sayi1 == "-1") return -sayi2;
+            if (sayi2 == "-1") return -sayi1;
+
+
+            int maxTam = sayi1._TamKisim.Count +  sayi2._TamKisim.Count;
+            int maxOnd = sayi1._OndalikliKisim.Count + sayi2._OndalikliKisim.Count;
+
+            uint[] TamKisim = new uint[maxTam];
+            uint[] OndalikliKisim = new uint[maxOnd];
+
+            // Sayıları Çarp
+            for (int i = 0; i < sayi2._OndalikliKisim.Count + sayi2._TamKisim.Count; i++)
             {
-                List<char> tam = new List<char>(); // Geçici Toplamlar
-                int elde = 0;
-                int rakam2 = sayi2.TamKisim[sayi2.TamKisim.Length - 1 - i] - '0';
-                for (int j = 0; j < sayi1.TamKisim.Length; j++)
+                for (int j = 0; j < sayi1._OndalikliKisim.Count + sayi1._TamKisim.Count; j++)
                 {
-                    int rakam1 = sayi1.TamKisim[sayi1.TamKisim.Length - 1 - j] - '0';
-                    int rakamSonuc = rakam1 * rakam2 + elde;
-                    elde = rakamSonuc / 10;
-                    rakamSonuc %= 10;
-                    tam.Insert(0, (char)(rakamSonuc + '0'));
-                }
-                while (elde > 0)
-                {
-                    tam.Insert(0, (char)(elde % 10 + '0'));
-                    elde /= 10;
-                }
-                for (int j = 0; j < i; j++) tam.Add('0');
+                    bool bool1 = false;
+                    bool bool2 = false;
+                    int indis1 = i + 1; if (indis1 > sayi2._OndalikliKisim.Count) { bool1 = true; indis1 -= sayi2._OndalikliKisim.Count; }
+                    int indis2 = j + 1; if (indis2 > sayi1._OndalikliKisim.Count) { bool2 = true; indis2 -= sayi1._OndalikliKisim.Count; }
 
-                sonuc += new SayiMetni(true, new string(tam.ToArray()));
+                    ulong sonuc = 1;
+                    // Sayı2 ile Çarp
+                    if (!bool1) sonuc *= sayi2._OndalikliKisim[^indis1];
+                    else sonuc *= sayi2._TamKisim[^indis1];
+                    // Sayı1 ile Çarp
+                    if (!bool2) sonuc *= sayi1._OndalikliKisim[^indis2];
+                    else sonuc *= sayi1._TamKisim[^indis2];
+
+                    // Sonuça Yaz
+                    bool bool3 = false;
+                    int indis3 = i + j + 1; if (indis3 > maxOnd) { bool3 = true; indis3 -= maxOnd; }
+
+                    if (!bool3)
+                    {
+                        sonuc += OndalikliKisim[^indis3];
+                        OndalikliKisim[^indis3] = (uint)(sonuc % 100000000);
+                    }
+                    else
+                    {
+                        sonuc += TamKisim[^indis3];
+                        TamKisim[^indis3] = (uint)(sonuc % 100000000);
+                    }
+                    bool bool4 = false;
+                    int indis4 = i + j + 2; if (indis4 > maxOnd) { bool4 = true; indis4 -= maxOnd; }
+
+                    if (!bool4)
+                    {
+                        OndalikliKisim[^indis4] += (uint)(sonuc / 100000000);
+                    }
+                    else
+                    {
+                        TamKisim[^indis4] += (uint)(sonuc / 100000000);
+                    }
+                }
             }
 
-            // Tam Sayıya Dönüştürmek için 10^n ile Çarpmıştık, Şimdi 10^n e Bölüyoruz
-            int uzunluk = s1.OndalikliKisim.Length + s2.OndalikliKisim.Length;
+            string deger = sayi1.Isaret == sayi2.Isaret ? "+" : "-";
+            foreach (var s in TamKisim)
+                deger += new string('0', 8-s.ToString().Length) + s.ToString();
+            deger += ".";
+            foreach (var s in OndalikliKisim)
+                deger += new string('0', 8 - s.ToString().Length) + s.ToString();
 
-            string tamS = sonuc.TamKisim.Substring(0, sonuc.TamKisim.Length - uzunluk);
-            string ondalikliS = sonuc.TamKisim.Substring(sonuc.TamKisim.Length - uzunluk, uzunluk);
-            bool isaretS = (s1.Isaret == s2.Isaret);
-
-            return new SayiMetni(isaretS, tamS, ondalikliS);
+            return deger;
         }
-        private static SayiMetni Bol(SayiMetni s1, SayiMetni s2, int ondalikBasamak = 20)
+        private static void Bol(SayiMetni sayi1, SayiMetni sayi2, int ondalikBasamak, out SayiMetni bolum, out SayiMetni kalan)
         {
-            if (s1 == "0") return new SayiMetni("0");
-            if (s2 == "0") throw new Exception("Sıfıra Bölünemez");
-            if (s2 == "1") return s1;
-            if (s2 == "-1") { s1.Isaret = !s1.Isaret; return s1; }
+            // sayi1 = 15.67 -> bolunen = 1567
+            // sayi2 = 6.4   -> bolen   =  640
+            // ondalikBasamak = 3 --> bolunen*=10^3
+            int adet1 = sayi2.OndalikliKisim.Length - sayi1.OndalikliKisim.Length; if (adet1 < 0) adet1 = 0;
+            int adet2 = sayi1.OndalikliKisim.Length - sayi2.OndalikliKisim.Length; if (adet2 < 0) adet2 = 0;
 
-            // s1 = "1578.45", s2 = "21.496" --> sayi1 = "1578450", sayi2 = "21496"
-            int uzunluk = Math.Max(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
-            List<char> sayi1 = new List<char>(s1.TamKisim);
-            List<char> bolen = new List<char>(s2.TamKisim);
-            for (int i = 0; i < uzunluk; i++)
-            {
-                if (i < s1.OndalikliKisim.Length) sayi1.Add(s1.OndalikliKisim[i]);
-                else sayi1.Add('0');
+            string bolunen = sayi1.TamKisim + sayi1.OndalikliKisim + new string('0', adet1 + ondalikBasamak);
+            string bolen = sayi2.TamKisim + sayi2.OndalikliKisim + new string('0', adet2);
 
-                if (i < s2.OndalikliKisim.Length) bolen.Add(s2.OndalikliKisim[i]);
-                else bolen.Add('0');
-            }
+            string sonuc = "0";
+            SayiMetni sayi = "0";
+            int index = 0;
 
-            // Bölme İşlemi
-            List<char> tam = new List<char>();
-            List<char> ondalikli = new List<char>();
-            bool isaret = s1.Isaret == s2.Isaret;
-            // ...
-            List<char> bolunen = new List<char>();
-            bolunen.Add(sayi1[0]);
-
-            int index = 1;
-            bool virgul = false;
             while (true)
             {
-                // Bölünen Bölümden Kuçükse
-                if (new SayiMetni(new string(bolunen.ToArray())) < new SayiMetni(new string(bolen.ToArray())))
+                if (sayi < bolen)
                 {
-                    if (sayi1.Count > index) // Yukarıdan Sayı Getir
-                    {
-                        bolunen.Add(sayi1[index]);
-                    }
-                    else // Yukarıda Sayı Yoksa Virgül Ekle ve 0 Getir
-                    {
-                        bolunen.Add('0');
-                        virgul = true;
-                    }
+                    if (index == bolunen.Length) break;
+                    sayi = sayi*"10" + bolunen[index].ToString();
                     index++;
-
-                    // Hala Küçükse Sonuca Sıfır Ekle
-                    if (new SayiMetni(new string(bolunen.ToArray())) < new SayiMetni(new string(bolen.ToArray())))
-                    {
-                        if (virgul) ondalikli.Add('0');
-                        else tam.Add('0');
-
-                        if (ondalikli.Count == ondalikBasamak + 1)
-                        {
-                            // Yuvarla
-                            if (ondalikli[ondalikBasamak] > '5') ondalikli[ondalikBasamak - 1]++;
-                            ondalikli.RemoveAt(ondalikBasamak);
-                            break;
-                        }
-                    }
-                }
+                    if (sayi < bolen)
+                        sonuc += "0";
+                } 
                 else
                 {
-                    SayiMetni carpim = new SayiMetni(new string(bolen.ToArray()));
-                    int sayi = 0;
-                    while (carpim <= new SayiMetni(new string(bolunen.ToArray())))
-                    {
-                        sayi++;
-                        carpim += new SayiMetni(new string(bolen.ToArray()));
-                    }
-
-                    SayiMetni yeniBolunen = new SayiMetni(new string(bolunen.ToArray())) + new SayiMetni(new string(bolen.ToArray())) - carpim;
-                    bolunen.Clear();
-                    for (int i = 0; i < yeniBolunen.TamKisim.Length; i++) bolunen.Add(yeniBolunen.TamKisim[i]);
-                    if (virgul) ondalikli.Add((char)(sayi + '0'));
-                    else tam.Add((char)(sayi + '0'));
-
-                    if (ondalikli.Count == ondalikBasamak + 1)
-                    {
-                        // Yuvarla
-                        if (ondalikli[ondalikBasamak] > '5') ondalikli[ondalikBasamak - 1]++;
-                        ondalikli.RemoveAt(ondalikBasamak);
-                        break;
-                    }
+                    int adet = -1;
+                    while (sayi >= "0") { sayi -= bolen; adet++; }
+                    sayi += bolen;
+                    sonuc += adet.ToString();
                 }
             }
 
+            // Bölümü Hesapla
+            bolum = sonuc;
+            bolum.Isaret = sayi1.Isaret == sayi2.Isaret;
+            int uzunluk = ondalikBasamak;
+            for (int i = 1; i <= uzunluk; i++)
+            {
+                var sonBasamak = '0';
+                if (i <= bolum.TamKisim.Length)
+                    sonBasamak = bolum.TamKisim[^i];
+                bolum.OndalikliKisim = sonBasamak + bolum.OndalikliKisim;
+            }
+            if (uzunluk <= bolum.TamKisim.Length)
+                bolum.TamKisim = bolum.TamKisim[..^(uzunluk)];
+            else
+                bolum.TamKisim = "0";
 
-            return new SayiMetni(isaret, new string(tam.ToArray()), new string(ondalikli.ToArray()));
+            // Kalanı Hesapla
+            kalan = sayi;
+            kalan.Isaret = sayi1.Isaret;
+            uzunluk = ondalikBasamak + Math.Max(sayi1.OndalikliKisim.Length, sayi2.OndalikliKisim.Length);
+            for (int i = 1; i <= uzunluk; i++)
+            {
+                var sonBasamak = '0';
+                if (i <= kalan.TamKisim.Length)
+                    sonBasamak = kalan.TamKisim[^i];
+                kalan.OndalikliKisim = sonBasamak + kalan.OndalikliKisim;
+            }
+            if (uzunluk <= kalan.TamKisim.Length)
+                kalan.TamKisim = kalan.TamKisim[..^(uzunluk)];
+            else
+                kalan.TamKisim = "0";
+
+        }
+        public static SayiMetni Bol(SayiMetni sayi1, SayiMetni sayi2, int ondalikBasamak = 20)
+        {
+            if (sayi1 == "0") return "0";
+            if (sayi2 == "0") throw new Exception("Sıfıra Bölünemez");
+            if (sayi2 == "1") return sayi1;
+            if (sayi2 == "-1") return sayi2 * "-1";
+
+            Bol(sayi1, sayi2, ondalikBasamak, out SayiMetni sonuc, out _);
+
+            return sonuc;
         }
         public static SayiMetni UsAl(SayiMetni taban, SayiMetni us)
         {
-            if (!us.Isaret) return new SayiMetni("-1");
+            if (us.OndalikliKisim != "0") throw new Exception("Ondalıklı Üs Hesaplanamadı!");
 
-            SayiMetni depoUs = us;
-            TamSayiyaDonustur(depoUs);
+
+            SayiMetni depoUs = us.ToString();
+            if (!us.Isaret)
+            {
+                depoUs.Isaret = true;
+                return "1" / UsAl(taban, depoUs);
+            }
 
             SayiMetni depoTaban = taban;
-            SayiMetni sonuc = new SayiMetni("+1");
+            SayiMetni sonuc = "+1";
 
             while (depoUs > "0")
             {
                 // Us Değeri Çiftse
-                if ((depoUs.TamKisim[depoUs.TamKisim.Length - 1] - '0') % 2 == 0)
+                if (CiftMi(depoUs))
                 {
                     depoUs /= "2";
                     depoTaban *= depoTaban;
@@ -445,35 +469,39 @@ namespace Metin_Matematigi_CS
 
             return sonuc;
         }
-        public static SayiMetni UsAl(string taban, string us)
-        {
-            return UsAl(new SayiMetni(taban), new SayiMetni(us));
-        }
         public static SayiMetni Faktoriyel(SayiMetni sayi)
         {
+            if (!sayi.Isaret) throw new Exception("Negatif Sayının Faktöriyeli Hesaplanamadı!");
+            if (sayi.OndalikliKisim != "0") throw new Exception("Ondalıklı Sayının Faktöriyeli Hesaplanamadı!");
+
+            if (sayi < "2") return "+1";
+
+            SayiMetni[] sayilar = new SayiMetni[1024];
+            for (int i = 0; i < sayilar.Length; i++) sayilar[i] = "1";
             SayiMetni depoSayi = sayi;
-            TamSayiyaDonustur(depoSayi);
+            int index = 0;
 
-            if (!depoSayi.Isaret) return new SayiMetni("-1");
-            if (depoSayi < "2") return new SayiMetni("+1");
-
-            SayiMetni sonuc = depoSayi;
-
-            while (depoSayi > "2")
+            while (depoSayi >= "2")
             {
+                sayilar[index] *= depoSayi;
+                index++;
+                if (index == sayilar.Length) index = 0;
                 depoSayi--;
-                sonuc *= depoSayi;
             }
 
-            return sonuc;
-        }
-        public static SayiMetni Faktoriyel(string sayi)
-        {
-            return Faktoriyel(new SayiMetni(sayi));
+            int kalan = sayilar.Length;
+            while (kalan > 1)
+            {
+                for (int i = 0; i < kalan; i += 2)
+                    sayilar[i / 2] = sayilar[i] * sayilar[i + 1];
+                kalan /= 2;
+            }
+
+            return sayilar[0];
         }
         public static SayiMetni Karekok(SayiMetni sayi)
         {
-            if (sayi < "0") return new SayiMetni("-1");
+            if (sayi < "0") throw new Exception("Negatif Sayının Karekökü Bulunamadı!");
 
             SayiMetni kok = (sayi + "1") / "2";
 
@@ -481,161 +509,47 @@ namespace Metin_Matematigi_CS
             {
                 SayiMetni depo = (kok + (sayi / kok)) / "2";
                 if (depo == kok) return kok;
-                kok = depo;
+                kok = depo.ToString();
             }
-        }
-        public static SayiMetni Karekok(string sayi)
-        {
-            return Karekok(new SayiMetni(sayi));
         }
         #endregion
 
         #region Aritmetiksel Operatörler
-        public static SayiMetni operator +(SayiMetni s1, SayiMetni s2)
+        public static SayiMetni operator +(SayiMetni s1, SayiMetni s2) => Topla(s1, s2);
+        public static SayiMetni operator -(SayiMetni s1, SayiMetni s2) => Cikart(s1, s2);
+        public static SayiMetni operator -(SayiMetni sayi)
         {
-            return Topla(s1, s2);
+            SayiMetni sonuc = sayi.ToString();
+            sonuc.Isaret = !sonuc.Isaret;
+            return sonuc;
         }
-        public static SayiMetni operator +(string s1, SayiMetni s2)
+        public static SayiMetni operator *(SayiMetni s1, SayiMetni s2) => Carp(s1, s2);
+        public static SayiMetni operator /(SayiMetni s1, SayiMetni s2) => Bol(s1, s2);
+        public static SayiMetni operator ++(SayiMetni s1) => s1 + "1";
+        public static SayiMetni operator --(SayiMetni s1) => s1 - "1";
+        public static SayiMetni operator %(SayiMetni s1, SayiMetni s2)
         {
-            return Topla(new SayiMetni(s1), s2);
-        }
-        public static SayiMetni operator +(SayiMetni s1, string s2)
-        {
-            return Topla(s1, new SayiMetni(s2));
-        }
-        public static SayiMetni operator -(SayiMetni s1, SayiMetni s2)
-        {
-            return Cikart(s1, s2);
-        }
-        public static SayiMetni operator -(string s1, SayiMetni s2)
-        {
-            return Cikart(new SayiMetni(s1), s2);
-        }
-        public static SayiMetni operator -(SayiMetni s1, string s2)
-        {
-            return Cikart(s1, new SayiMetni(s2));
-        }
-        public static SayiMetni operator *(SayiMetni s1, SayiMetni s2)
-        {
-            return Carp(s1, s2);
-        }
-        public static SayiMetni operator *(string s1, SayiMetni s2)
-        {
-            return Carp(new SayiMetni(s1), s2);
-        }
-        public static SayiMetni operator *(SayiMetni s1, string s2)
-        {
-            return Carp(s1, new SayiMetni(s2));
-        }
-        public static SayiMetni operator /(SayiMetni s1, SayiMetni s2)
-        {
-            return Bol(s1, s2);
-        }
-        public static SayiMetni operator /(string s1, SayiMetni s2)
-        {
-            return Bol(new SayiMetni(s1), s2);
-        }
-        public static SayiMetni operator /(SayiMetni s1, string s2)
-        {
-            return Bol(s1, new SayiMetni(s2));
-        }
-        public static SayiMetni operator ++(SayiMetni s1)
-        {
-            return s1 + "1";
-        }
-        public static SayiMetni operator --(SayiMetni s1)
-        {
-            return s1 - "1";
+            if (s2 == "2") return CiftMi(s1) ? "0" : "1";
+            Bol(s1, s2, 0, out _, out SayiMetni kalan);
+            return kalan;
         }
         #endregion
 
         #region Karşılaştırma Operatörleri
-        public static bool operator ==(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) == 0;
-        }
-        public static bool operator ==(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) == 0;
-        }
-        public static bool operator ==(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) == 0;
-        }
-        public static bool operator !=(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) != 0;
-        }
-        public static bool operator !=(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) != 0;
-        }
-        public static bool operator !=(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) != 0;
-        }
-        public static bool operator >=(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) >= 0;
-        }
-        public static bool operator >=(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) >= 0;
-        }
-        public static bool operator >=(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) >= 0;
-        }
-        public static bool operator <=(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) <= 0;
-        }
-        public static bool operator <=(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) <= 0;
-        }
-        public static bool operator <=(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) <= 0;
-        }
-        public static bool operator >(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) > 0;
-        }
-        public static bool operator >(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) > 0;
-        }
-        public static bool operator >(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) > 0;
-        }
-        public static bool operator <(SayiMetni s1, SayiMetni s2)
-        {
-            return s1.CompareTo(s2) < 0;
-        }
-        public static bool operator <(SayiMetni s1, string s2)
-        {
-            return s1.CompareTo(new SayiMetni(s2)) < 0;
-        }
-        public static bool operator <(string s1, SayiMetni s2)
-        {
-            return s2.CompareTo(new SayiMetni(s1)) < 0;
-        }
+        public static bool operator ==(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) == 0;
+        public static bool operator !=(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) != 0;
+        public static bool operator >=(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) >= 0;
+        public static bool operator <=(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) <= 0;
+        public static bool operator >(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) > 0;
+        public static bool operator <(SayiMetni s1, SayiMetni s2) => s1.CompareTo(s2) < 0;
         #endregion
 
         #region Örtük Dönüştürme Operatörleri
-        public static implicit operator SayiMetni(string sayi)
-        {
-            return new SayiMetni(sayi);
-        }
+        public static implicit operator SayiMetni(string sayi) => new SayiMetni(sayi);
         #endregion
 
         #region Açık Dönüştürme Operatörleri
-        public static explicit operator string(SayiMetni sayiMetni)
-        {
-            return sayiMetni.ToString();
-        }
+        public static explicit operator string(SayiMetni sayiMetni) => sayiMetni.ToString();
         #endregion
 
         #region Diğer Metotlar
@@ -646,25 +560,31 @@ namespace Metin_Matematigi_CS
                     return false;
             return metin.Length > 0; // "" -> false
         }
-        public static SayiMetni TamSayiyaDonustur(SayiMetni s1)
+        public static SayiMetni TamSayiyaDonustur(SayiMetni sayi)
         {
-            s1.OndalikliKisim = "0";
-            return s1;
+            SayiMetni sonuc = sayi.ToString();
+            sonuc.OndalikliKisim = "0";
+            return sonuc;
+        }
+        public static bool CiftMi(SayiMetni sayi)
+        {
+            if ((sayi._OndalikliKisim[^1].ToString()[^1] - '0') % 2 != 0) return false;
+            if ((sayi._TamKisim[^1].ToString()[^1] - '0') % 2 != 0) return false;
+            return true;
         }
         public static SayiMetni RastgeleAralik(SayiMetni min, SayiMetni maks)
         {
+            if (min.OndalikliKisim != "0" || maks.OndalikliKisim != "0") throw new Exception("Min ve Maks Parametreleri Tam Sayı Olmalıdır");
             if (min > maks) return RastgeleAralik(maks, min);
             SayiMetni fark = maks - min; // min-maks arası değil, 0-fark arası sayı belirleyeceğiz
-            SayiMetni sonuc = new SayiMetni("0");
-
+            
             int kacBit = 0;
             // Farkın Kaç Bit Olduğunu Hesapla
             {
                 SayiMetni depo = fark;
                 while (depo > "0")
                 {
-                    if ((depo.TamKisim[depo.TamKisim.Length - 1] - '0') % 2 == 1) depo--;
-                    depo /= "2";
+                    depo = Bol(depo, "2", 0); // Tam Sayı Olarak Böl ( 3 / 2 == 0)
                     kacBit++;
                 }
             }
@@ -672,61 +592,57 @@ namespace Metin_Matematigi_CS
             Random random = new Random();
             while (true)
             {
-                sonuc = new SayiMetni("0");
+                SayiMetni sonuc = "0";
                 for (int i = 0; i < kacBit; i++)
                 {
-                    SayiMetni bit = new SayiMetni(new string(new char[1] { (char)(random.Next(0, 2) + '0') }));
-                    sonuc = sonuc * "2" + bit;
+                    SayiMetni bit = random.Next(0, 2).ToString();
+                    sonuc *= "2";
+                    sonuc += bit;
                 }
 
                 if (sonuc <= fark) return sonuc + min;
             }
-        }
-        public static SayiMetni RastgeleAralik(string min, string maks)
-        {
-            return RastgeleAralik(new SayiMetni(min), new SayiMetni(maks));
         }
         #endregion
 
         #region Devralınan Metotlar
         public int CompareTo(object? obj)
         {
-            if (obj == null) throw new ArgumentNullException();
+            if (obj == null) throw new ArgumentNullException("Parametre null Olamaz.");
             if (obj is not SayiMetni) throw new ArgumentException("Parametre, SayıMetni Türünde Olmalıdır.");
 
             SayiMetni s1 = this;
             SayiMetni s2 = (SayiMetni)obj;
 
-            if (s1.Isaret && !s2.Isaret) return 1; // Pozitif Negatiften Her Zaman Büyüktür
-            if (!s1.Isaret && s2.Isaret) return -1; // Negatif Pozitiften Her Zaman Küçüktür
+            if (s1.Isaret != s2.Isaret) return s1.Isaret ? 1 : -1; // Pozitif Negatiften Her Zaman Büyüktür
 
-            // Aynı İşarete Sahipler
+            // Aynı İşarete Sahiplerse
 
-            if (s1.TamKisim.Length > s2.TamKisim.Length) return s1.Isaret ? 1 : -1; // Basamak Sayısı Büyükse, Sayı Pozitifse Büyük, Sayı Negatifse Küçüktür
-            if (s2.TamKisim.Length > s1.TamKisim.Length) return s1.Isaret ? -1 : 1; // Basamak Sayısı Küçükse, Sayı Pozitifse Küçük, Sayı Negatifse Büyüktür
+            if (s1._TamKisim.Count > s2._TamKisim.Count) return s1.Isaret ? 1 : -1; // Basamak Sayısı Büyükse, Sayı Pozitifse Büyük, Sayı Negatifse Küçüktür
+            if (s2._TamKisim.Count > s1._TamKisim.Count) return s1.Isaret ? -1 : 1; // Basamak Sayısı Küçükse, Sayı Pozitifse Küçük, Sayı Negatifse Büyüktür
 
-            // Aynı Basamak Sayısına Sahipler
+            // Aynı Basamak Sayısına Sahiplerse
 
             // Basamaklarındaki Sayıları Karşılaştır
-            for (int i = 0; i < s1.TamKisim.Length; i++)
-                     if (s1.TamKisim[i] > s2.TamKisim[i]) return s1.Isaret ? 1 : -1;
-                else if (s2.TamKisim[i] > s1.TamKisim[i]) return s1.Isaret ? -1 : 1;
+            for (int i = 0; i < s1._TamKisim.Count; i++)
+                     if (s1._TamKisim[i] > s2._TamKisim[i]) return s1.Isaret ? 1 : -1;
+                else if (s2._TamKisim[i] > s1._TamKisim[i]) return s1.Isaret ? -1 : 1;
 
-            // Tam Kısımları Aynı
+            // Tam Kısımları Aynıysa
 
             // Ondalıklı Kısımdaki Sayıları Karşılaştır
-            int uzunluk = Math.Min(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
+            int uzunluk = Math.Min(s1._OndalikliKisim.Count, s2._OndalikliKisim.Count);
             for (int i = 0; i < uzunluk; i++)
-                     if (s1.OndalikliKisim[i] > s2.OndalikliKisim[i]) return s1.Isaret ? 1 : -1;
-                else if (s2.OndalikliKisim[i] > s1.OndalikliKisim[i]) return s1.Isaret ? -1 : 1;
+                     if (s1._OndalikliKisim[i] > s2._OndalikliKisim[i]) return s1.Isaret ? 1 : -1;
+                else if (s2._OndalikliKisim[i] > s1._OndalikliKisim[i]) return s1.Isaret ? -1 : 1;
 
-            // Ondalıklı Kısımlarında Ortak Sayılar Aynı
+            // Ondalıklı Kısımlarında Ortak Sayılar Aynıysa
 
             // Fazla Basamağı Kalan Var mı
-            if (s1.OndalikliKisim.Length > s2.OndalikliKisim.Length) return s1.Isaret ? 1 : -1;
-            if (s2.OndalikliKisim.Length > s1.OndalikliKisim.Length) return s1.Isaret ? -1 : 1;
+            if (s1._OndalikliKisim.Count > s2._OndalikliKisim.Count) return s1.Isaret ? 1 : -1;
+            if (s2._OndalikliKisim.Count > s1._OndalikliKisim.Count) return s1.Isaret ? -1 : 1;
 
-            return 0;
+            return 0; // Eşitler
         }
         #endregion
 
