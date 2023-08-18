@@ -2,7 +2,7 @@
 
 namespace Metin_Matematigi_CS
 {
-    public struct SayiMetni
+    public class SayiMetni : IComparable
     {
 
         #region Değişkenler
@@ -87,18 +87,18 @@ namespace Metin_Matematigi_CS
         #endregion
 
         #region Yapıcı Metotlar
-        public SayiMetni()
+        private SayiMetni()
         {
             TamKisim = "0";
             OndalikliKisim = "0";
         }
-        public SayiMetni(bool Isaret = true, string TamKisim = "0", string OndalikliKisim = "0")
+        private SayiMetni(bool Isaret = true, string TamKisim = "0", string OndalikliKisim = "0")
         {
             this.Isaret = Isaret;
             this.TamKisim = TamKisim;
             this.OndalikliKisim = OndalikliKisim;
         }
-        public SayiMetni(string sayi)
+        private SayiMetni(string sayi)
         {
             int i = 0;
 
@@ -549,150 +549,78 @@ namespace Metin_Matematigi_CS
         }
         #endregion
 
-        #region Karşılaştırma Metotları
-        private static bool Karsilastir(SayiMetni s1, SayiMetni s2, bool EsitMi) //Büyükse "true" döndürür. Eşitse "EsitMi" döndürür
-        {
-            if (s1.Isaret && !s2.Isaret) return true; // Pozitif Negatiften Her Zaman Büyüktür
-            if (!s1.Isaret && s2.Isaret) return false; // Negatif Pozitiften Her Zaman Küçüktür
-
-            // Aynı İşarete Sahipler
-
-            if (s1.TamKisim.Length > s2.TamKisim.Length) return true == s1.Isaret; // Basamak Sayısı Büyükse, Sayı Pozitifse Büyük, Sayı Negatifse Küçüktür
-            if (s2.TamKisim.Length > s1.TamKisim.Length) return false == s1.Isaret; // Basamak Sayısı Küçükse, Sayı Pozitifse Küçük, Sayı Negatifse Büyüktür
-
-            // Aynı Basamak Sayısına Sahipler
-
-            // Basamaklarındaki Sayıları Karşılaştır
-            for (int i = 0; i < s1.TamKisim.Length; i++)
-                if (s1.TamKisim[i] > s2.TamKisim[i]) return true == s1.Isaret;
-                else if (s2.TamKisim[i] > s1.TamKisim[i]) return false == s1.Isaret;
-
-            // Tam Kısımları Aynı
-
-            // Ondalıklı Kısımdaki Sayıları Karşılaştır
-            int uzunluk = Math.Min(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
-            for (int i = 0; i < uzunluk; i++)
-                if (s1.OndalikliKisim[i] > s2.OndalikliKisim[i]) return true == s1.Isaret;
-                else if (s2.OndalikliKisim[i] > s1.OndalikliKisim[i]) return false == s1.Isaret;
-
-            // Ondalıklı Kısımlarında Ortak Sayılar Aynı
-
-            // Fazla Basamağı Kalan Var mı
-            if (s1.OndalikliKisim.Length > s2.OndalikliKisim.Length) return true == s1.Isaret;
-            if (s1.OndalikliKisim.Length < s2.OndalikliKisim.Length) return false == s1.Isaret;
-
-            return EsitMi; // İki Sayı Birbirine Eşit
-        }
-        private static bool BuyukMu(SayiMetni s1, SayiMetni s2)
-        {
-            return Karsilastir(s1, s2, false);
-        }
-        private static bool BuyukEsitMi(SayiMetni s1, SayiMetni s2)
-        {
-            return Karsilastir(s1, s2, true);
-        }
-        private static bool KucukMu(SayiMetni s1, SayiMetni s2)
-        {
-            return !BuyukEsitMi(s1, s2);
-        }
-        private static bool KucukEsitMi(SayiMetni s1, SayiMetni s2)
-        {
-            return !BuyukMu(s1, s2);
-        }
-        private static bool EsitMi(SayiMetni s1, SayiMetni s2)
-        {
-            if (s1.Isaret != s2.Isaret) return false;
-            if (s1.TamKisim.Length != s2.TamKisim.Length) return false;
-            if (s1.OndalikliKisim.Length != s2.OndalikliKisim.Length) return false;
-
-            for (int i = 0; i < s1.TamKisim.Length; i++)
-                if (s1.TamKisim[i] != s2.TamKisim[i])
-                    return false;
-
-            for (int i = 0; i < s1.OndalikliKisim.Length; i++)
-                if (s1.OndalikliKisim[i] != s2.OndalikliKisim[i])
-                    return false;
-
-            return true;
-        }
-        private static bool FarkliMi(SayiMetni s1, SayiMetni s2)
-        {
-            return !EsitMi(s1, s2);
-        }
-        #endregion
-
         #region Karşılaştırma Operatörleri
         public static bool operator ==(SayiMetni s1, SayiMetni s2)
         {
-            return EsitMi(s1, s2);
+            return s1.CompareTo(s2) == 0;
         }
         public static bool operator ==(SayiMetni s1, string s2)
         {
-            return EsitMi(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) == 0;
         }
         public static bool operator ==(string s1, SayiMetni s2)
         {
-            return EsitMi(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) == 0;
         }
         public static bool operator !=(SayiMetni s1, SayiMetni s2)
         {
-            return FarkliMi(s1, s2);
+            return s1.CompareTo(s2) != 0;
         }
         public static bool operator !=(SayiMetni s1, string s2)
         {
-            return FarkliMi(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) != 0;
         }
         public static bool operator !=(string s1, SayiMetni s2)
         {
-            return FarkliMi(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) != 0;
         }
         public static bool operator >=(SayiMetni s1, SayiMetni s2)
         {
-            return BuyukEsitMi(s1, s2);
+            return s1.CompareTo(s2) >= 0;
         }
         public static bool operator >=(SayiMetni s1, string s2)
         {
-            return BuyukEsitMi(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) >= 0;
         }
         public static bool operator >=(string s1, SayiMetni s2)
         {
-            return BuyukEsitMi(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) >= 0;
         }
         public static bool operator <=(SayiMetni s1, SayiMetni s2)
         {
-            return KucukEsitMi(s1, s2);
+            return s1.CompareTo(s2) <= 0;
         }
         public static bool operator <=(SayiMetni s1, string s2)
         {
-            return KucukEsitMi(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) <= 0;
         }
         public static bool operator <=(string s1, SayiMetni s2)
         {
-            return KucukEsitMi(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) <= 0;
         }
         public static bool operator >(SayiMetni s1, SayiMetni s2)
         {
-            return BuyukMu(s1, s2);
+            return s1.CompareTo(s2) > 0;
         }
         public static bool operator >(SayiMetni s1, string s2)
         {
-            return BuyukMu(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) > 0;
         }
         public static bool operator >(string s1, SayiMetni s2)
         {
-            return BuyukMu(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) > 0;
         }
         public static bool operator <(SayiMetni s1, SayiMetni s2)
         {
-            return KucukMu(s1, s2);
+            return s1.CompareTo(s2) < 0;
         }
         public static bool operator <(SayiMetni s1, string s2)
         {
-            return KucukMu(s1, new SayiMetni(s2));
+            return s1.CompareTo(new SayiMetni(s2)) < 0;
         }
         public static bool operator <(string s1, SayiMetni s2)
         {
-            return KucukMu(new SayiMetni(s1), s2);
+            return s2.CompareTo(new SayiMetni(s1)) < 0;
         }
         #endregion
 
@@ -757,6 +685,48 @@ namespace Metin_Matematigi_CS
         public static SayiMetni RastgeleAralik(string min, string maks)
         {
             return RastgeleAralik(new SayiMetni(min), new SayiMetni(maks));
+        }
+        #endregion
+
+        #region Devralınan Metotlar
+        public int CompareTo(object? obj)
+        {
+            if (obj == null) throw new ArgumentNullException();
+            if (obj is not SayiMetni) throw new ArgumentException("Parametre, SayıMetni Türünde Olmalıdır.");
+
+            SayiMetni s1 = this;
+            SayiMetni s2 = (SayiMetni)obj;
+
+            if (s1.Isaret && !s2.Isaret) return 1; // Pozitif Negatiften Her Zaman Büyüktür
+            if (!s1.Isaret && s2.Isaret) return -1; // Negatif Pozitiften Her Zaman Küçüktür
+
+            // Aynı İşarete Sahipler
+
+            if (s1.TamKisim.Length > s2.TamKisim.Length) return s1.Isaret ? 1 : -1; // Basamak Sayısı Büyükse, Sayı Pozitifse Büyük, Sayı Negatifse Küçüktür
+            if (s2.TamKisim.Length > s1.TamKisim.Length) return s1.Isaret ? -1 : 1; // Basamak Sayısı Küçükse, Sayı Pozitifse Küçük, Sayı Negatifse Büyüktür
+
+            // Aynı Basamak Sayısına Sahipler
+
+            // Basamaklarındaki Sayıları Karşılaştır
+            for (int i = 0; i < s1.TamKisim.Length; i++)
+                     if (s1.TamKisim[i] > s2.TamKisim[i]) return s1.Isaret ? 1 : -1;
+                else if (s2.TamKisim[i] > s1.TamKisim[i]) return s1.Isaret ? -1 : 1;
+
+            // Tam Kısımları Aynı
+
+            // Ondalıklı Kısımdaki Sayıları Karşılaştır
+            int uzunluk = Math.Min(s1.OndalikliKisim.Length, s2.OndalikliKisim.Length);
+            for (int i = 0; i < uzunluk; i++)
+                     if (s1.OndalikliKisim[i] > s2.OndalikliKisim[i]) return s1.Isaret ? 1 : -1;
+                else if (s2.OndalikliKisim[i] > s1.OndalikliKisim[i]) return s1.Isaret ? -1 : 1;
+
+            // Ondalıklı Kısımlarında Ortak Sayılar Aynı
+
+            // Fazla Basamağı Kalan Var mı
+            if (s1.OndalikliKisim.Length > s2.OndalikliKisim.Length) return s1.Isaret ? 1 : -1;
+            if (s2.OndalikliKisim.Length > s1.OndalikliKisim.Length) return s1.Isaret ? -1 : 1;
+
+            return 0;
         }
         #endregion
 

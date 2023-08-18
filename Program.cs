@@ -4,11 +4,11 @@
     {
         static void Main(string[] args)
         {
-            SayiMetni s1 = new SayiMetni(false, "26", "84");
-            SayiMetni s2 = new SayiMetni("-543583490.004543500");
-            SayiMetni s3 = new SayiMetni();
+            SayiMetni s1 = "-26.84";
+            SayiMetni s2 = "-543583490.004543500";
+            SayiMetni s3 = "0";
             SayiMetni s4 = "+02546.437500";
-
+            
             string deneme = (string) s2;
             Console.WriteLine("Sayi Metni Sinifindan String Sinifina Acik Donusturme Yapilabilir: " + deneme);
 
