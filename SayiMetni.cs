@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Metin_Matematigi_CS
 {
@@ -161,6 +163,7 @@ namespace Metin_Matematigi_CS
                 _OndalikHassasiyet = value;
             }
         }
+        public static SayiMetni PI { get; private set; } = "3.14";
         #endregion
 
         #region Yapıcı Metotlar
@@ -674,6 +677,32 @@ namespace Metin_Matematigi_CS
 
                 if (sonuc <= fark) return sonuc + min;
             }
+        }
+        /// <summary>
+        /// Pi değerini hesaplar ve <see cref="PI"/> değerini günceller.
+        /// <para>Pi değerini hesaplarken Gauss-Legendre İteratif Algoritması kullanır.</para>
+        /// </summary>
+        /// <param name="hassasiyet"> Döngü sayısını belirtir. </param>
+        public static void PIHesapla(int hassasiyet)
+        {
+            if (hassasiyet <= 0) hassasiyet = 1;
+
+            SayiMetni a = "1";
+            SayiMetni b = "1" / Karekok("2");
+            SayiMetni t = "0.25";
+            SayiMetni p = "1";
+            for (int i = 0; i < hassasiyet; i++)
+            {
+                SayiMetni a2 = (a + b) / "2";
+                SayiMetni b2 = Karekok(a*b);
+                SayiMetni t2 = t - p*UsAl(a-a2, "2");
+                a = a2;
+                b = b2;
+                t = t2;
+                p *= "2";
+            }
+            SayiMetni sonuc = UsAl(a + b, "2") / ("4"*t);
+            PI = sonuc;
         }
         #endregion
 

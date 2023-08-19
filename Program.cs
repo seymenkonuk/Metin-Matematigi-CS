@@ -1,10 +1,15 @@
-﻿namespace Metin_Matematigi_CS
+﻿using System;
+
+namespace Metin_Matematigi_CS
 {
     internal class Program
     {
         static void Main(string[] args)
         {
-            SayiMetni.OndalikHassasiyet = 100;
+            SayiMetni.OndalikHassasiyet = 10;
+            SayiMetni.PIHesapla(10);
+            Console.WriteLine(SayiMetni.PI);
+
             SayiMetni s1 = "-26.84";
             SayiMetni s2 = "-543583490.004543500";
             SayiMetni s3 = "0";
