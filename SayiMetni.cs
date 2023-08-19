@@ -8,10 +8,18 @@ namespace Metin_Matematigi_CS
         #region Değişkenler
         private readonly List<uint> _TamKisim = new ();
         private readonly List<uint> _OndalikliKisim = new ();
+        private static int _OndalikHassasiyet = 20;
         #endregion
 
         #region Özellikler
+        /// <summary>
+        /// True değeri sayının pozitif, false değeri sayının negatif olduğunu belirtir.
+        /// </summary>
         public bool Isaret { get; set; }
+        /// <summary>
+        /// <para>Sayının tam kısmını metin olarak geri döndürür.</para>
+        /// <para>Değiştirilmeye çalışıldığında gereksiz sıfırları atar. Sayı değilse 0 değeri alır.</para>
+        /// </summary>
         public string TamKisim
         {
             get
@@ -50,6 +58,10 @@ namespace Metin_Matematigi_CS
                 
             }
         }
+        /// <summary>
+        /// <para>Sayının ondalıklı kısmını metin olarak geri döndürür.</para>
+        /// <para>Değiştirilmeye çalışıldığında gereksiz sıfırları atar. Sayı değilse 0 değeri alır.</para>
+        /// </summary>
         public string OndalikliKisim
         {
             get
@@ -95,6 +107,12 @@ namespace Metin_Matematigi_CS
                     _OndalikliKisim.RemoveAt(_OndalikliKisim.Count-1);
             }
         }
+        /// <summary>
+        /// Sayının bir basamağını döndürür.
+        /// </summary>
+        /// <param name="i"> Negatif ise ondalıklı kısmından, pozitif ise tam kısmından bir basamak seçilir. </param>
+        /// <returns> |i|. basamağı döndürür. </returns>
+        /// <exception cref="Exception">Yalnızca 0 numaralı indis değeri yoktur. 0 indisi bir hata fırlatır.</exception>
         public int this[int i]
         {
             get
@@ -129,6 +147,18 @@ namespace Metin_Matematigi_CS
                     }
                     return 0;
                 }
+            }
+        }
+        /// <summary>
+        /// Bölme işleminde virgülden sonra hesaplanacak basamak sayısını belirler.
+        /// </summary>
+        public static int OndalikHassasiyet
+        {
+            get => _OndalikHassasiyet;
+            set
+            {
+                if (value < 0) value = 0;
+                _OndalikHassasiyet = value;
             }
         }
         #endregion
@@ -190,7 +220,7 @@ namespace Metin_Matematigi_CS
         #endregion
 
         #region Aritmetiksel Metotlar
-        public static SayiMetni Topla(SayiMetni sayi1, SayiMetni sayi2)
+        private static SayiMetni Topla(SayiMetni sayi1, SayiMetni sayi2)
         {
             // Pozitif + Negatif -> Pozitif - Pozitif
             if (sayi1.Isaret && !sayi2.Isaret)
@@ -426,17 +456,24 @@ namespace Metin_Matematigi_CS
                 kalan.TamKisim = "0";
 
         }
-        public static SayiMetni Bol(SayiMetni sayi1, SayiMetni sayi2, int ondalikBasamak = 20)
+        private static SayiMetni Bol(SayiMetni sayi1, SayiMetni sayi2, int ondalikBasamak)
         {
             if (sayi1 == "0") return "0";
             if (sayi2 == "0") throw new Exception("Sıfıra Bölünemez");
             if (sayi2 == "1") return sayi1;
             if (sayi2 == "-1") return sayi2 * "-1";
-
+            
             Bol(sayi1, sayi2, ondalikBasamak, out SayiMetni sonuc, out _);
 
             return sonuc;
         }
+        /// <summary>
+        /// Aldığı iki parametreye göre üslü sayı işlemi yapar.
+        /// </summary>
+        /// <param name="taban"></param>
+        /// <param name="us"></param>
+        /// <returns> taban üzeri us işleminin sonucunu geriye döndürür. </returns>
+        /// <exception cref="Exception"> Üs Değeri Ondalıklı Bir Sayıysa Hata Fırlatır. </exception>
         public static SayiMetni UsAl(SayiMetni taban, SayiMetni us)
         {
             if (us.OndalikliKisim != "0") throw new Exception("Ondalıklı Üs Hesaplanamadı!");
@@ -469,6 +506,12 @@ namespace Metin_Matematigi_CS
 
             return sonuc;
         }
+        /// <summary>
+        /// Aldığı parametreye göre faktöriyel işlemi yapar.
+        /// </summary>
+        /// <param name="sayi"> Faktöriyeli hesaplanacak sayı. </param>
+        /// <returns> İşlemin sonucunu geriye döndürür. </returns>
+        /// <exception cref="Exception"> Sayı değeri ondalıklı bir sayıysa hata fırlatır. </exception>
         public static SayiMetni Faktoriyel(SayiMetni sayi)
         {
             if (!sayi.Isaret) throw new Exception("Negatif Sayının Faktöriyeli Hesaplanamadı!");
@@ -499,6 +542,13 @@ namespace Metin_Matematigi_CS
 
             return sayilar[0];
         }
+        /// <summary>
+        /// Aldığı sayının karekökünü hesaplar.
+        /// Virgülden sonra <see cref="OndalikHassasiyet"/> adet basamak gösterir.
+        /// </summary>
+        /// <param name="sayi"> Karekökü hesaplanacak sayı. </param>
+        /// <returns> Sayının karekökünü döndürür. </returns>
+        /// <exception cref="Exception"> Sayı negatif ise hata fırlatır. </exception>
         public static SayiMetni Karekok(SayiMetni sayi)
         {
             if (sayi < "0") throw new Exception("Negatif Sayının Karekökü Bulunamadı!");
@@ -524,7 +574,7 @@ namespace Metin_Matematigi_CS
             return sonuc;
         }
         public static SayiMetni operator *(SayiMetni s1, SayiMetni s2) => Carp(s1, s2);
-        public static SayiMetni operator /(SayiMetni s1, SayiMetni s2) => Bol(s1, s2);
+        public static SayiMetni operator /(SayiMetni s1, SayiMetni s2) => Bol(s1, s2, OndalikHassasiyet);
         public static SayiMetni operator ++(SayiMetni s1) => s1 + "1";
         public static SayiMetni operator --(SayiMetni s1) => s1 - "1";
         public static SayiMetni operator %(SayiMetni s1, SayiMetni s2)
@@ -553,6 +603,11 @@ namespace Metin_Matematigi_CS
         #endregion
 
         #region Diğer Metotlar
+        /// <summary>
+        /// Metnin yalnızca rakamlardan oluşup oluşmadığını kontrol eder.
+        /// </summary>
+        /// <param name="metin"> Kontrol edilecek metin </param>
+        /// <returns> Metin yalnızca rakamlardan oluşuyorsa true, aksi durumda false döndürür. </returns>
         public static bool TamSayiMi(string metin)
         {
             for (int i = 0; i < metin.Length; i++)
@@ -560,18 +615,35 @@ namespace Metin_Matematigi_CS
                     return false;
             return metin.Length > 0; // "" -> false
         }
+        /// <summary>
+        /// Sayının ondalıklı kısmını 0 yapar ve geriye döndürür. Orjinal sayı değişmez.
+        /// </summary>
+        /// <param name="sayi"></param>
+        /// <returns> Sayının tam kısmını geriye döndürür. </returns>
         public static SayiMetni TamSayiyaDonustur(SayiMetni sayi)
         {
             SayiMetni sonuc = sayi.ToString();
             sonuc.OndalikliKisim = "0";
             return sonuc;
         }
+        /// <summary>
+        /// Sayının çift olup olmadığını kontrol eder.
+        /// </summary>
+        /// <param name="sayi"></param>
+        /// <returns> Sayı çift ise true, değilse false döndürür. </returns>
         public static bool CiftMi(SayiMetni sayi)
         {
             if ((sayi._OndalikliKisim[^1].ToString()[^1] - '0') % 2 != 0) return false;
             if ((sayi._TamKisim[^1].ToString()[^1] - '0') % 2 != 0) return false;
             return true;
         }
+        /// <summary>
+        /// Belirtilen aralıkta (iki sayı da dahil) rastgele sayı oluşturur.
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="maks"></param>
+        /// <returns> Oluşturduğu sayıyı geriye döndürür. </returns>
+        /// <exception cref="Exception"> Parametrelerden en az birisi ondalıklı bir sayı ise hata fırlatır. </exception>
         public static SayiMetni RastgeleAralik(SayiMetni min, SayiMetni maks)
         {
             if (min.OndalikliKisim != "0" || maks.OndalikliKisim != "0") throw new Exception("Min ve Maks Parametreleri Tam Sayı Olmalıdır");

@@ -4,16 +4,14 @@
     {
         static void Main(string[] args)
         {
-            //Console.WriteLine((SayiMetni)"26840000000000000000000000000" - "678349000454350000000000000");
-
+            SayiMetni.OndalikHassasiyet = 100;
             SayiMetni s1 = "-26.84";
             SayiMetni s2 = "-543583490.004543500";
             SayiMetni s3 = "0";
             SayiMetni s4 = "02546.437500";
-
             string deneme = (string) s2;
             Console.WriteLine("Sayi Metni Sinifindan String Sinifina Acik Donusturme Yapilabilir: " + deneme);
-
+            
             Console.WriteLine("{0} Sayisinin 3. Basamagi -> {1}", s4, s4[3]);
             Console.WriteLine("{0} Sayisinin Virgulden Sonraki 4. Basamagi -> {1}", s4, s4[-4]);
 
